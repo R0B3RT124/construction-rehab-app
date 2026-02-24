@@ -1,0 +1,466 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ─────────────────────────────────────────────
+// AUTH (NextAuth)
+// ─────────────────────────────────────────────
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  password      String?
+  role          UserRole  @default(ADMIN)
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+}
+
+enum UserRole {
+  ADMIN
+  VIEWER
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+
+// ─────────────────────────────────────────────
+// CORE ENTITIES
+// ─────────────────────────────────────────────
+
+model Project {
+  id             String            @id @default(cuid())
+  name           String
+  address        String
+  description    String?
+  status         ProjectStatus     @default(ACTIVE)
+  billingModel   BillingModel      @default(FIXED_PRICE)
+  contractAmount Decimal?          @db.Decimal(12, 2)
+  budgetEstimate Decimal?          @db.Decimal(12, 2)
+  actualCost     Decimal?          @db.Decimal(12, 2)
+  completionPct  Int               @default(0)
+  startDate      DateTime?
+  targetEndDate  DateTime?
+  actualEndDate  DateTime?
+  customerId     String
+  customer       Contact           @relation("CustomerProjects", fields: [customerId], references: [id])
+  milestones     Milestone[]
+  scheduleItems  ScheduleItem[]
+  permits        Permit[]
+  communications Communication[]
+  invoices       Invoice[]
+  callLogs       CallLog[]
+  activityLogs   ActivityLog[]
+  approvals      ApprovalRequest[]
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+}
+
+enum ProjectStatus {
+  LEAD
+  ACTIVE
+  ON_HOLD
+  COMPLETED
+  CANCELLED
+}
+
+enum BillingModel {
+  FIXED_PRICE
+  TIME_AND_MATERIALS
+  MILESTONE
+}
+
+model Contact {
+  id               String          @id @default(cuid())
+  type             ContactType
+  name             String
+  email            String?
+  phone            String?
+  company          String?
+  qbCustomerId     String?
+  qbVendorId       String?
+  notes            String?
+  customerProjects Project[]       @relation("CustomerProjects")
+  subScheduleItems ScheduleItem[]  @relation("SubcontractorItems")
+  communications   Communication[]
+  callLogs         CallLog[]
+  createdAt        DateTime        @default(now())
+  updatedAt        DateTime        @updatedAt
+}
+
+enum ContactType {
+  CUSTOMER
+  SUBCONTRACTOR
+  SUPPLIER
+  OTHER
+}
+
+model Milestone {
+  id          String          @id @default(cuid())
+  projectId   String
+  project     Project         @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  name        String
+  description String?
+  status      MilestoneStatus @default(PENDING)
+  dueDate     DateTime?
+  completedAt DateTime?
+  invoiceable Boolean         @default(false)
+  amount      Decimal?        @db.Decimal(12, 2)
+  order       Int             @default(0)
+  approvals   ApprovalRequest[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+}
+
+enum MilestoneStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  DELAYED
+  BLOCKED
+}
+
+// ─────────────────────────────────────────────
+// SCHEDULING & PERMITS
+// ─────────────────────────────────────────────
+
+model ScheduleItem {
+  id              String         @id @default(cuid())
+  projectId       String
+  project         Project        @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  subcontractorId String?
+  subcontractor   Contact?       @relation("SubcontractorItems", fields: [subcontractorId], references: [id])
+  title           String
+  description     String?
+  startDate       DateTime
+  endDate         DateTime
+  allDay          Boolean        @default(false)
+  status          ScheduleStatus @default(SCHEDULED)
+  reminderSentAt  DateTime?
+  approvals       ApprovalRequest[]
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
+
+enum ScheduleStatus {
+  SCHEDULED
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+  RESCHEDULED
+}
+
+model Permit {
+  id               String       @id @default(cuid())
+  projectId        String
+  project          Project      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  type             String
+  permitNumber     String?
+  status           PermitStatus @default(NOT_APPLIED)
+  appliedDate      DateTime?
+  approvedDate     DateTime?
+  expiresDate      DateTime?
+  inspectionDate   DateTime?
+  inspectionResult String?
+  notes            String?
+  reminderSentAt   DateTime?
+  createdAt        DateTime     @default(now())
+  updatedAt        DateTime     @updatedAt
+}
+
+enum PermitStatus {
+  NOT_APPLIED
+  APPLIED
+  APPROVED
+  REJECTED
+  EXPIRED
+  INSPECTION_SCHEDULED
+  INSPECTION_PASSED
+  INSPECTION_FAILED
+  CLOSED
+}
+
+// ─────────────────────────────────────────────
+// COMMUNICATIONS
+// ─────────────────────────────────────────────
+
+model Communication {
+  id          String            @id @default(cuid())
+  projectId   String?
+  project     Project?          @relation(fields: [projectId], references: [id])
+  contactId   String?
+  contact     Contact?          @relation(fields: [contactId], references: [id])
+  channel     CommChannel
+  direction   CommDirection
+  subject     String?
+  body        String            @db.Text
+  status      CommStatus        @default(DRAFT)
+  draftedBy   String
+  sentAt      DateTime?
+  approvals   ApprovalRequest[]
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+}
+
+enum CommChannel {
+  EMAIL
+  SMS
+  PHONE_CALL
+  INTERNAL_NOTE
+}
+
+enum CommDirection {
+  INBOUND
+  OUTBOUND
+}
+
+enum CommStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  SENT
+  REJECTED
+}
+
+// ─────────────────────────────────────────────
+// BILLING / QUICKBOOKS
+// ─────────────────────────────────────────────
+
+model Invoice {
+  id              String        @id @default(cuid())
+  projectId       String
+  project         Project       @relation(fields: [projectId], references: [id])
+  qbInvoiceId     String?
+  qbInvoiceNumber String?
+  billingModel    BillingModel
+  status          InvoiceStatus @default(DRAFT)
+  lineItems       Json
+  subtotal        Decimal       @db.Decimal(12, 2)
+  tax             Decimal?      @db.Decimal(12, 2)
+  total           Decimal       @db.Decimal(12, 2)
+  issuedDate      DateTime?
+  dueDate         DateTime?
+  paidDate        DateTime?
+  paidAmount      Decimal?      @db.Decimal(12, 2)
+  notes           String?
+  approvals       ApprovalRequest[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+enum InvoiceStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  SENT
+  PAID
+  PARTIAL
+  OVERDUE
+  VOID
+}
+
+// ─────────────────────────────────────────────
+// PHONE CALLS
+// ─────────────────────────────────────────────
+
+model CallLog {
+  id            String        @id @default(cuid())
+  projectId     String?
+  project       Project?      @relation(fields: [projectId], references: [id])
+  contactId     String?
+  contact       Contact?      @relation(fields: [contactId], references: [id])
+  twilioCallSid String        @unique
+  direction     CommDirection
+  fromNumber    String
+  toNumber      String
+  status        CallStatus    @default(IN_PROGRESS)
+  duration      Int?
+  recordingUrl  String?
+  transcript    String?       @db.Text
+  summary       String?       @db.Text
+  routedToAgent String?
+  startedAt     DateTime      @default(now())
+  endedAt       DateTime?
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+}
+
+enum CallStatus {
+  IN_PROGRESS
+  COMPLETED
+  FAILED
+  NO_ANSWER
+  BUSY
+}
+
+// ─────────────────────────────────────────────
+// AGENT INFRASTRUCTURE
+// ─────────────────────────────────────────────
+
+model AgentRun {
+  id          String    @id @default(cuid())
+  agentType   AgentType
+  status      RunStatus @default(RUNNING)
+  input       Json?
+  output      Json?
+  error       String?   @db.Text
+  tokenUsage  Json?
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+  steps       AgentStep[]
+}
+
+model AgentStep {
+  id         String   @id @default(cuid())
+  agentRunId String
+  agentRun   AgentRun @relation(fields: [agentRunId], references: [id], onDelete: Cascade)
+  stepIndex  Int
+  type       StepType
+  toolName   String?
+  toolInput  Json?
+  toolOutput Json?
+  thinking   String?  @db.Text
+  createdAt  DateTime @default(now())
+}
+
+enum AgentType {
+  LEAD
+  PROJECT_TRACKER
+  LIAISON
+  SCHEDULING
+}
+
+enum RunStatus {
+  RUNNING
+  COMPLETED
+  FAILED
+  AWAITING_APPROVAL
+}
+
+enum StepType {
+  THINKING
+  TOOL_CALL
+  TOOL_RESULT
+  HUMAN_APPROVAL_REQUESTED
+  HUMAN_APPROVAL_RECEIVED
+  FINAL_RESPONSE
+}
+
+model ApprovalRequest {
+  id              String         @id @default(cuid())
+  agentRunId      String?
+  agentType       AgentType
+  actionType      ApprovalAction
+  priority        Priority       @default(NORMAL)
+  title           String
+  description     String         @db.Text
+  proposedData    Json
+  status          ApprovalStatus @default(PENDING)
+  reviewedBy      String?
+  reviewedAt      DateTime?
+  reviewNotes     String?
+  projectId       String?
+  project         Project?       @relation(fields: [projectId], references: [id])
+  milestoneId     String?
+  milestone       Milestone?     @relation(fields: [milestoneId], references: [id])
+  scheduleItemId  String?
+  scheduleItem    ScheduleItem?  @relation(fields: [scheduleItemId], references: [id])
+  communicationId String?
+  communication   Communication? @relation(fields: [communicationId], references: [id])
+  invoiceId       String?
+  invoice         Invoice?       @relation(fields: [invoiceId], references: [id])
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
+
+enum ApprovalAction {
+  SEND_COMMUNICATION
+  MAJOR_MILESTONE_CHANGE
+  SCHEDULE_CHANGE
+  INVOICE_SEND
+  OUTBOUND_CALL
+  BUDGET_CHANGE
+  PERMIT_ACTION
+}
+
+enum ApprovalStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  EXPIRED
+}
+
+enum Priority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+model ActivityLog {
+  id         String     @id @default(cuid())
+  projectId  String?
+  project    Project?   @relation(fields: [projectId], references: [id])
+  agentType  AgentType?
+  actorType  String
+  actorId    String?
+  action     String
+  entityType String?
+  entityId   String?
+  metadata   Json?
+  createdAt  DateTime   @default(now())
+}
+
+// ─────────────────────────────────────────────
+// QUICKBOOKS OAUTH
+// ─────────────────────────────────────────────
+
+model QBToken {
+  id               String   @id @default(cuid())
+  realmId          String   @unique
+  accessToken      String   @db.Text
+  refreshToken     String   @db.Text
+  expiresAt        DateTime
+  refreshExpiresAt DateTime
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+}
