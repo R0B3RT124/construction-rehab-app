@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 192 192" width="192" height="192">
+  <rect width="192" height="192" rx="32" fill="#0f1117"/>
+  <rect x="8" y="8" width="176" height="176" rx="28" fill="#1a1f2e" stroke="#f97316" stroke-width="3"/>
+  <text x="96" y="78" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="42" font-weight="800" fill="#f97316">MC</text>
+  <text x="96" y="128" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="600" fill="#94a3b8">CONSTRUCTION</text>
+  <text x="96" y="148" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="600" fill="#94a3b8">MGMT</text>
+</svg>
