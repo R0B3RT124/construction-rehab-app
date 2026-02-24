@@ -21,7 +21,7 @@ export default function Sidebar() {
     <aside className="w-56 flex-shrink-0 bg-[#1a1f2e] border-r border-[#2d3748] flex flex-col h-screen sticky top-0">
       {/* Logo */}
       <div className="px-5 py-5 border-b border-[#2d3748]">
-        <div className="text-xl font-bold text-orange-500">RehabOps</div>
+        <div className="text-xl font-bold text-orange-500">Mitchell</div>
         <div className="text-xs text-slate-500 mt-0.5">Construction Management</div>
       </div>
 

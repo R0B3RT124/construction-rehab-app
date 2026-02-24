@@ -193,7 +193,7 @@ async function main() {
       channel: 'EMAIL',
       direction: 'OUTBOUND',
       subject: 'Project Update: Rough Plumbing Complete',
-      body: 'Hi John & Sarah,\n\nGreat news! The rough plumbing phase for your kitchen and bath renovation has been completed. The city inspection is scheduled for Feb 27th.\n\nNext up is the electrical rough-in, which starts Feb 24th.\n\nPlease let us know if you have any questions.\n\nBest regards,\nRehabOps Team',
+      body: 'Hi John & Sarah,\n\nGreat news! The rough plumbing phase for your kitchen and bath renovation has been completed. The city inspection is scheduled for Feb 27th.\n\nNext up is the electrical rough-in, which starts Feb 24th.\n\nPlease let us know if you have any questions.\n\nBest regards,\nMitchell Construction Team',
       status: 'SENT',
       draftedBy: 'liaison-agent',
       sentAt: new Date('2026-02-22T10:00:00'),

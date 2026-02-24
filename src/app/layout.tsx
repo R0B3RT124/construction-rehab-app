@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "RehabOps - Construction Management",
+  title: "Mitchell Construction Management",
   description: "AI-powered construction rehab project management",
 };
 

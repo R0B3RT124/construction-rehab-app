@@ -34,8 +34,8 @@ export default function LoginPage() {
       <div className="w-full max-w-md">
         <div className="bg-[#1a1f2e] rounded-2xl border border-[#2d3748] p-8 shadow-2xl">
           <div className="text-center mb-8">
-            <div className="text-3xl font-bold text-orange-500 mb-1">RehabOps</div>
-            <div className="text-slate-400 text-sm">Construction Management Platform</div>
+            <div className="text-3xl font-bold text-orange-500 mb-1">Mitchell</div>
+            <div className="text-slate-400 text-sm">Construction Management</div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">

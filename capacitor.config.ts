@@ -2,7 +2,7 @@ import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.rehabops.app',
-  appName: 'RehabOps',
+  appName: 'Mitchell Construction',
   webDir: 'public',  // Minimal — the app loads entirely from the live server
   server: {
     // The native app shell loads the live Vercel deployment directly
